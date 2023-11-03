@@ -1,15 +1,26 @@
+import { click } from "@testing-library/user-event/dist/click";
 import { useState, useSyncExternalStore } from "react";
-
-const initialItems = [
-  { id: 1, description: "Passports", quantity: 2, packed: false },
-  { id: 2, description: "Socks", quantity: 12, packed: false },
-];
 
 export default function App() {
   // For adding Items Global State
   const [items, setItems] = useState([]);
+
   function handleAddItems(item) {
     setItems((items) => [...items, item]);
+  }
+
+  // for deleting items
+  function handleDeleteItems(id) {
+    setItems((items) => items.filter((item) => item.id !== id));
+  }
+
+  // for updating items (checkbox)
+  function handleUpdateItems(id) {
+    setItems((items) =>
+      items.map((item) =>
+        item.id === id ? { ...item, packed: !item.packed } : item
+      )
+    );
   }
 
   return (
@@ -17,8 +28,12 @@ export default function App() {
       <Logo />
       {/* onAddItems is just a convention */}
       <Form onAddItems={handleAddItems}></Form>
-      <PackingList items={items}></PackingList>
-      <Stats></Stats>
+      <PackingList
+        items={items}
+        onDeleteItems={handleDeleteItems}
+        onUpdateItems={handleUpdateItems}
+      ></PackingList>
+      <Stats items={items}></Stats>
     </div>
   );
 }
@@ -42,7 +57,6 @@ function Form({ onAddItems }) {
 
     onAddItems(newItem);
   }
-  console.log(num);
 
   return (
     <form className="add-form" onSubmit={handleSubmit}>
@@ -69,33 +83,48 @@ function Form({ onAddItems }) {
 }
 
 // Showing information to the user
-function PackingList({ items }) {
+function PackingList({ items, onDeleteItems, onUpdateItems }) {
   return (
     <div className="list">
       <ul>
         {items.map((item) => (
-          <Item item={item} key={item.id}></Item>
+          <Item
+            item={item}
+            key={item.id}
+            onDeleteItems={onDeleteItems}
+            onUpdateItems={onUpdateItems}
+          ></Item>
         ))}
       </ul>
     </div>
   );
 }
 
-function Item({ item }) {
+function Item({ item, onDeleteItems, onUpdateItems }) {
   return (
     <li>
+      <input
+        type="checkbox"
+        value={item.packed}
+        onClick={() => {
+          onUpdateItems(item.id);
+        }}
+      ></input>
       <span style={item.packed ? { textDecoration: "line-through" } : {}}>
-        {item.quantity} {item.description}
+        {item.num} {item.description}
       </span>
-      <button>❌</button>
+      <button onClick={() => onDeleteItems(item.id)}>❌</button>
     </li>
   );
 }
 
-function Stats() {
+function Stats({ items }) {
   return (
     <footer className="stats">
-      <em>💼 You have x items on your list and you already passed X(X%)</em>
+      <em>
+        💼 You have {items.length} {items.length >= 2 ? "items" : "item"} on
+        your list and you already passed X(X%)
+      </em>
       <p>
         &copy; {new Date().getFullYear()} Jonas Schmedtmann(From the React
         course), Programmer:{" "}
